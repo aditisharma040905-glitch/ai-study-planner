@@ -1,64 +1,67 @@
-from fastapi import APIRouter, HTTPException, Depends
-from sqlalchemy.orm import Session
-from passlib.context import CryptContext
+from fastapi import APIRouter, HTTPException, status, Depends
+from app.schemas import UserCreate, UserLogin
+from app.core.auth import (
+    hash_password,
+    verify_password,
+    create_access_token,
+    verify_token
+)
+from datetime import timedelta
 
-from app import models
-from app.database import SessionLocal
-from app.auth import create_access_token
+router = APIRouter(
+    prefix="/users",
+    tags=["Users"]
+)
 
-router = APIRouter(prefix="/users", tags=["Users"])
+# Temporary in-memory database
+fake_users_db = []
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-
-# ---------- DB DEPENDENCY ----------
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
-# ---------- SIGNUP ----------
+# =====================
+# SIGNUP
+# =====================
 @router.post("/signup")
-def create_user(name: str, email: str, password: str, db: Session = Depends(get_db)):
+def signup(user: UserCreate):
+    for u in fake_users_db:
+        if u["email"] == user.email:
+            raise HTTPException(status_code=400, detail="User already exists")
 
-    # check if user already exists
-    existing = db.query(models.User).filter(models.User.email == email).first()
-    if existing:
-        raise HTTPException(status_code=400, detail="Email already registered")
+    hashed_password = hash_password(user.password)
 
-    hashed_password = pwd_context.hash(password)
-
-    new_user = models.User(
-        name=name,
-        email=email,
-        password=hashed_password
-    )
-
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-
-    return {
-        "id": new_user.id,
-        "name": new_user.name,
-        "email": new_user.email
+    new_user = {
+        "name": user.name,
+        "email": user.email,
+        "password": hashed_password,
+        "role": "user"
     }
 
+    fake_users_db.append(new_user)
+    return {"message": "User created successfully"}
 
-# ---------- LOGIN ----------
+# =====================
+# LOGIN
+# =====================
 @router.post("/login")
-def login(email: str, password: str, db: Session = Depends(get_db)):
-    user = db.query(models.User).filter(models.User.email == email).first()
+def login(user: UserLogin):
+    for u in fake_users_db:
+        if u["email"] == user.email:
+            if not verify_password(user.password, u["password"]):
+                raise HTTPException(status_code=401, detail="Incorrect password")
 
-    if not user or not pwd_context.verify(password, user.password):
-        raise HTTPException(status_code=401, detail="Invalid email or password")
+            token = create_access_token(
+                data={"sub": u["email"]},
+                expires_delta=timedelta(minutes=30)
+            )
 
-    token = create_access_token({"sub": user.email})
+            return {
+                "access_token": token,
+                "token_type": "bearer"
+            }
 
-    return {
-        "access_token": token,
-        "token_type": "bearer"
-    }
+    raise HTTPException(status_code=404, detail="User not found")
+
+# =====================
+# PROTECTED ROUTE
+# =====================
+@router.get("/me")
+def get_me(current_user: str = Depends(verify_token)):
+    return {"email": current_user}
