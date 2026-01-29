@@ -1,4 +1,8 @@
 from pydantic import BaseModel, EmailStr
+from datetime import datetime
+from pydantic import BaseModel
+from typing import Optional
+
 
 
 class UserCreate(BaseModel):
@@ -36,3 +40,26 @@ class NoteOut(NoteBase):
 
     class Config:
         from_attributes = True
+
+class TaskBase(BaseModel):
+    title: str
+    description: Optional[str] = None
+    due_date: Optional[datetime] = None
+
+class TaskCreate(TaskBase):
+    pass
+
+class TaskUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    due_date: Optional[datetime] = None
+    completed: Optional[bool] = None
+
+class TaskOut(TaskBase):
+    id: int
+    completed: bool
+    owner_id: int
+
+    class Config:
+        from_attributes = True
+
