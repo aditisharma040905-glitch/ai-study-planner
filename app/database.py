@@ -5,6 +5,7 @@ from sqlalchemy.orm import sessionmaker
 # SQLite database URL
 SQLALCHEMY_DATABASE_URL = "sqlite:///./app.db"
 
+
 # Engine create
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
@@ -23,3 +24,4 @@ def get_db():
         yield db
     finally:
         db.close()
+
