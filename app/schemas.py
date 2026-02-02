@@ -33,6 +33,9 @@ class NoteBase(BaseModel):
 class NoteCreate(NoteBase):
     pass
 
+class NoteResponse(NoteBase):
+    id: int
+
 
 class NoteOut(NoteBase):
     id: int
@@ -62,5 +65,6 @@ class TaskOut(TaskBase):
 
     class Config:
         from_attributes = True
+
 
 
