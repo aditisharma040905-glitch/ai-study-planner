@@ -66,5 +66,7 @@ class TaskOut(TaskBase):
     class Config:
         from_attributes = True
 
+class AIQuestion(BaseModel):
+    question: str
 
 

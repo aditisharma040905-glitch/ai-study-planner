@@ -5,7 +5,9 @@ from app.database import get_db
 from app import models
 from app.core.jwt import get_current_user
 from app.core.ai_engine import generate_tasks_from_note
-
+from app.core.ai_engine import generate_qa_from_note
+from app.schemas import AIQuestion
+from app.core.ai_engine import answer_user_question
 router = APIRouter(prefix="/ai", tags=["AI"])
 
 
@@ -41,4 +43,41 @@ def create_tasks_from_note(
     return {
         "message": "AI tasks created successfully",
         "tasks": created_tasks
+    }
+
+
+
+@router.get("/note/{note_id}/qa")
+def generate_qa(
+    note_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    note = db.query(models.Note).filter(
+        models.Note.id == note_id,
+        models.Note.owner_id == current_user.id
+    ).first()
+
+    if not note:
+        raise HTTPException(status_code=404, detail="Note not found")
+
+    qa = generate_qa_from_note(note.content)
+
+    return {
+        "note_id": note.id,
+        "qa": qa
+    }
+
+
+
+@router.post("/ask")
+def ask_ai(
+    data: AIQuestion,
+    current_user = Depends(get_current_user)
+):
+    answer = answer_user_question(data.question)
+
+    return {
+        "question": data.question,
+        "answer": answer
     }

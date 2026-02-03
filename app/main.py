@@ -2,6 +2,8 @@ from fastapi import FastAPI
 from app.routes import users, notes
 from app.database import Base, engine
 from app.routes import task
+from app.routes import ai
+
 
 
 
@@ -15,6 +17,7 @@ app.include_router(users.router)
 app.include_router(notes.router)
 
 app.include_router(task.router)
+app.include_router(ai.router)
 
 
 @app.get("/")
