@@ -70,3 +70,10 @@ class AIQuestion(BaseModel):
     question: str
 
 
+class AIHistoryOut(BaseModel):
+    id: int
+    question: str
+    answer: str
+
+    class Config:
+        from_attributes = True

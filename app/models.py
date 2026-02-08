@@ -39,3 +39,14 @@ class Task(Base):
     owner_id = Column(Integer, ForeignKey("users.id"))
 
     owner = relationship("User", back_populates="tasks")
+
+class AIHistory(Base):
+    __tablename__ = "ai_history"
+
+    id = Column(Integer, primary_key=True, index=True)
+    question = Column(Text, nullable=False)
+    answer = Column(Text, nullable=False)
+
+    owner_id = Column(Integer, ForeignKey("users.id"))
+
+    owner = relationship("User")
