@@ -83,3 +83,66 @@ def generate_study_schedule(tasks):
         )
 
     return schedule
+
+
+def generate_priority_schedule(tasks):
+    """
+    Create priority-based study schedule using due dates.
+    Earlier due date = higher priority.
+    """
+    if not tasks:
+        return ["No pending tasks. You are all caught up!"]
+
+    # Sort by due date (None goes last)
+    tasks_sorted = sorted(
+        tasks,
+        key=lambda t: t.due_date if t.due_date else datetime.max
+    )
+
+    schedule = []
+
+    for task in tasks_sorted:
+        if task.due_date:
+            day = task.due_date.strftime("%d %b")
+            schedule.append(f"🔥 High Priority before {day}: {task.title}")
+        else:
+            schedule.append(f"📘 Study Soon: {task.title}")
+
+    return schedule
+def generate_exam_revision_plan(tasks):
+    """
+    Generate a smart revision plan before exams.
+    Focus on incomplete and important tasks.
+    """
+
+    if not tasks:
+        return ["You have no pending topics. Ready for the exam! 🎉"]
+
+    revision_plan = []
+    day = 1
+
+    for task in tasks[:7]:  # limit to 7 topics for 1-week revision
+        revision_plan.append(f"Day {day}: Revise {task.title}")
+        day += 1
+
+    revision_plan.append("Final Day: Practice previous year questions + mock test")
+
+    return revision_plan
+def generate_productivity_insight(total, completed):
+    """
+    Generate smart feedback based on study progress.
+    """
+
+    if total == 0:
+        return "You haven't added any study tasks yet. Start planning today! 📚"
+
+    percent = (completed / total) * 100
+
+    if percent == 100:
+        return "Excellent work! You are fully prepared for exams. 🏆"
+    elif percent >= 70:
+        return "Great progress! Revise remaining topics and you're ready. 💪"
+    elif percent >= 40:
+        return "Good start, but you need more consistency. Keep studying daily. 📖"
+    else:
+        return "You are falling behind. Create a strict study schedule now. ⚠️"

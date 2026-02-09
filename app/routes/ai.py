@@ -11,6 +11,9 @@ from app.core.ai_engine import (
 )
 from app.schemas import AIQuestion, AIHistoryOut
 from app.core.ai_engine import generate_study_schedule
+from app.core.ai_engine import generate_priority_schedule
+from app.core.ai_engine import generate_exam_revision_plan
+from app.core.ai_engine import generate_productivity_insight
 
 router = APIRouter(prefix="/ai", tags=["AI"])
 
@@ -129,4 +132,61 @@ def get_study_schedule(
     return {
         "total_tasks": len(pending_tasks),
         "schedule": schedule
+    }
+@router.get("/priority-schedule")
+def get_priority_schedule(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    pending_tasks = db.query(models.Task).filter(
+        models.Task.owner_id == current_user.id,
+        models.Task.completed == False
+    ).all()
+
+    schedule = generate_priority_schedule(pending_tasks)
+
+    return {
+        "total_pending": len(pending_tasks),
+        "priority_schedule": schedule
+    }
+@router.get("/exam-revision")
+def get_exam_revision_plan(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    pending_tasks = db.query(models.Task).filter(
+        models.Task.owner_id == current_user.id,
+        models.Task.completed == False
+    ).all()
+
+    plan = generate_exam_revision_plan(pending_tasks)
+
+    return {
+        "pending_topics": len(pending_tasks),
+        "revision_plan": plan
+    }
+@router.get("/productivity")
+def get_productivity_insight(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    total_tasks = db.query(models.Task).filter(
+        models.Task.owner_id == current_user.id
+    ).count()
+
+    completed_tasks = db.query(models.Task).filter(
+        models.Task.owner_id == current_user.id,
+        models.Task.completed == True
+    ).count()
+
+    insight = generate_productivity_insight(total_tasks, completed_tasks)
+
+    percent = (completed_tasks / total_tasks * 100) if total_tasks else 0
+
+    return {
+        "total_tasks": total_tasks,
+        "completed_tasks": completed_tasks,
+        "pending_tasks": total_tasks - completed_tasks,
+        "completion_percentage": round(percent, 2),
+        "ai_feedback": insight
     }
